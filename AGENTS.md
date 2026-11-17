@@ -1,10 +1,75 @@
 # AGENTS.md — AI Agent Guidelines & Architecture Manual
 
-> **Scope:** This document defines mandatory architectural invariants, technical patterns, and development guidelines for all AI agents working on the **Smart Student Task Prioritization Queue System**.
+> **Scope:** This document defines mandatory rules, behavioral guidelines, architectural invariants, and technical patterns for all AI agents working on the **Smart Student Task Prioritization Queue System**.
 
 ---
 
-## 1. Prime Directives & Constitution Invariants
+## 1. Project Rules for AI Assistants
+
+### Git rules
+- NEVER commit or push directly to `main`. Always work on a feature branch.
+- Branch names: `feature/<short-name>`, `fix/<short-name>`, `chore/<short-name>`.
+- NEVER commit, push, merge, rebase, or force-push unless I ask you to.
+- NEVER use `git push --force`, `git reset --hard`, or delete branches without asking.
+- Keep commits small, with one purpose each. Message format: `type(scope): short description` (e.g. `feat(auth): add session logout`).
+- Do not mix unrelated changes in the same commit or PR.
+
+### Files you must never commit or print
+- `.env`, secrets, API keys, passwords, tokens, database dumps, credentials.
+- `.idea/`, `.vscode/`, `__pycache__/`, `*.pyc`, `.venv/`, `*.sqlite`, log files.
+- If you see a secret in the code, stop and warn me instead of copying it anywhere.
+- If a file that should be ignored is not in `.gitignore`, tell me before adding it.
+
+### Before you change anything
+- Read the relevant files first. Do not guess how the code works.
+- If the request is unclear, ask a question instead of assuming.
+- For changes touching more than 3 files, or anything involving the database, auth, or payments, explain your plan first and wait for my OK.
+- Do not refactor, rename, or reformat code I did not ask you to touch.
+
+### Code rules
+- Follow the existing structure and naming of the project. Do not introduce a new pattern without telling me why.
+- Do not add a new library or dependency without asking.
+- Do not add abstractions "just in case". Keep it simple.
+- Add type hints and short docstrings to new functions.
+- No hardcoded secrets, URLs, or magic numbers. Use config or environment variables.
+- No leftover debug code: no stray `print()`, commented-out blocks, or TODOs without a reason.
+- Keep routes thin. Put business logic in services and database access in the persistence layer.
+
+### Database rules
+- NEVER edit the database schema by hand. Use Alembic migrations.
+- NEVER drop tables, delete data, or run destructive SQL without my explicit approval.
+- Always use parameterized queries or the ORM. Never build SQL with string concatenation.
+- Wrap multi-step changes (like stock + order updates) in a transaction.
+
+### Security rules
+- Validate all input with Pydantic. Never trust the frontend or client.
+- Check authentication and permissions on every protected endpoint.
+- Never return password hashes or other sensitive fields in API responses.
+- Do not log secrets, tokens, or personal data.
+
+### Testing rules
+- New features and bug fixes need pytest tests, including failure cases.
+- Run the tests before saying the work is done. If you cannot run them, say so.
+- Do not delete, skip, or weaken a test just to make it pass.
+- A successful HTTP 200 does not prove the business logic is correct. Test the actual rules.
+
+### Honesty and communication
+- Never claim something works if you did not run or verify it.
+- If you are unsure, say so. Do not invent functions, libraries, or APIs.
+- Tell me what you changed, which files, and why, in simple words.
+- Point out risks or problems you notice, even if I did not ask.
+- If you make a mistake, say so and fix it. Do not hide it.
+
+### Documentation
+- Update the README or docs when behavior or setup changes.
+- Document important decisions and their trade-offs in short notes.
+
+### Definition of done
+A task is done only when: the code works, tests pass, no secrets or junk files are staged, the diff only contains what was asked, and I have been told what changed.
+
+---
+
+## 2. Prime Directives & Constitution Invariants
 
 Every agent modifying this codebase MUST strictly abide by the rules ratified in [`specs/constitution.md`](file:///C:/Users/merss/Documents/Smart%20Student%20Task%20Prioritization%20Queue%20System/specs/constitution.md):
 
@@ -21,7 +86,7 @@ Every agent modifying this codebase MUST strictly abide by the rules ratified in
 
 ---
 
-## 2. Command Palette & Tooling Rules
+## 3. Command Palette & Tooling Rules
 
 All commands MUST run through the **`uv`** package manager. Do not run bare `python`, `pip`, or `poetry`.
 
@@ -45,7 +110,7 @@ uv run pytest tests/test_tasks_queue.py -v
 
 ---
 
-## 3. Layer Boundaries & Architectural Conventions
+## 4. Layer Boundaries & Architectural Conventions
 
 ```
 Router (FastAPI)     -> HTTP parsing, dependency injection, status code mapping.
@@ -63,7 +128,7 @@ Persistence (Models) -> Declarative SQLAlchemy models, foreign keys, cascade rul
 
 ---
 
-## 4. Testing Discipline
+## 5. Testing Discipline
 
 - **Test Database Isolation:** Tests run against `taskqueue_test`. The test engine in `tests/conftest.py` will abort if the database name does not end in `_test`.
 - **Clean State:** An autouse fixture truncates tables before each test (`DELETE FROM tasks; DELETE FROM courses; DELETE FROM users;`).
@@ -72,7 +137,7 @@ Persistence (Models) -> Declarative SQLAlchemy models, foreign keys, cascade rul
 
 ---
 
-## 5. Milestone Scope Discipline
+## 6. Milestone Scope Discipline
 
 When implementing Milestone 1, agents are **strictly forbidden** from introducing:
 - Docker / Dockerfiles / Docker Compose.

@@ -1,4 +1,4 @@
-# Milestone 1 Backend Implementation Plan (Approach 2 — Academic Domain with Courses)
+# Milestone 1 Backend Implementation Plan (1-Week Cadence, <4h/Day)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -9,6 +9,21 @@
 **Tech Stack:** Python 3.12 (uv), FastAPI, Pydantic v2, SQLAlchemy 2.0 (sync), PyMySQL + cryptography, Alembic, pydantic-settings, PyJWT, pwdlib[argon2], email-validator, pytest, httpx.
 
 **Spec:** `specs/feature/2026-11-17-milestone-1-backend/` (`specification.md`, `implementation.md`, `validation.md`), governed by `specs/constitution.md` and `specs/tech-stack.md`.
+
+---
+
+## 1-Week Schedule Breakdown (<4 Hours Coding / Day)
+
+| Day | Focus Area | Tasks Included | Est. Time | Deliverable |
+|---|---|---|---|---|
+| **Day 1** | Foundation & Priority Math | **Task 1** (Scaffold & DB Core) + **Task 2** (Pure Scoring Engine) | ~3.0 hrs | Working project config, UTC types, and 100% unit-tested scoring algorithms. |
+| **Day 2** | Database Models & Migrations | **Task 3** (User, Course, Task Models, Alembic Migration, MySQL Test Harness) | ~2.5 hrs | MySQL schema migrated, cascade rules in place, guarded test suite running. |
+| **Day 3** | Authentication & Users | **Task 4** (Security, JWT Auth, Register/Login by Username/Email, `/users/me`) | ~2.5 hrs | Working student registration, flexible login, and profile lifecycle. |
+| **Day 4** | Academic Domain CRUD | **Task 5** (Course CRUD) + **Task 6** (Task CRUD with Course Linkage) | ~3.5 hrs | Full course management with color badges and task creation with priority math. |
+| **Day 5** | Queue Engine & Delivery | **Task 7** (Queue & Top Tasks) + **Task 8** (IDOR Security, Swagger QA, Docs) | ~3.5 hrs | Functional dual queue (`?sort=deadline\|smart`), isolation verified, M1 complete. |
+| **Days 6–7** | Buffer & Review | Manual testing, exploratory edge cases, and M2 handoff prep | — | Reserve time for unexpected blockers. |
+
+---
 
 ## Global Constraints
 
@@ -23,9 +38,9 @@
 - Deleting a course sets `tasks.course_id = NULL` (`ON DELETE SET NULL`), preserving the student's task. Deleting a user cascades and removes all their courses and tasks (`ON DELETE CASCADE`).
 - Scoring constants: `WEIGHT_TIME_PRESSURE = 0.50`, `WEIGHT_IMPACT = 0.35`, `WEIGHT_DIFFICULTY = 0.15`, `IMPACT_CAP_PERCENT = 50.0`, `URGENT_WINDOW_HOURS = 24.0`, default `daily_study_hours = 3.0`.
 - Forbidden in M1: Docker, Redis, ML code, frontend/CORS, email sending, deployment configuration.
-- Commit after each task with conventional commit messages.
+- Version control is handled by the owner per `AGENTS.md` (no automated git commits without explicit instruction).
 
-## Prerequisite (Owner Action, before Task 3)
+## Prerequisite (Owner Action, before Day 2)
 
 Run the one-time MySQL setup SQL from `specs/feature/2026-11-17-milestone-1-backend/implementation.md` §1 to create `taskqueue`, `taskqueue_test`, and the `taskqueue` MySQL user. Copy `.env.example` to `.env` and configure `SECRET_KEY`, `DATABASE_URL`, and `TEST_DATABASE_URL`.
 
@@ -39,7 +54,9 @@ Run the one-time MySQL setup SQL from `specs/feature/2026-11-17-milestone-1-back
 
 ---
 
-### Task 1: Project scaffold, settings, and database core
+## DAY 1: Foundation & Priority Math (~3.0 Hours)
+
+### Task 1: Project scaffold, settings, and database core (~1.5 hrs)
 
 **Files:**
 - Create: `pyproject.toml`, `.python-version`, `uv.lock`, `.env.example`
@@ -83,16 +100,9 @@ Expected: FAIL (missing `app.core.config` / `app.core.database`).
 Run: `uv run pytest tests/test_core.py -v`
 Expected: PASS (all tests pass).
 
-- [ ] **Step 6: Commit**
-
-```bash
-git add pyproject.toml uv.lock .python-version .env.example app tests
-git commit -m "chore: scaffold uv project with settings and UTC datetime type"
-```
-
 ---
 
-### Task 2: Pure priority engine
+### Task 2: Pure priority engine (~1.5 hrs)
 
 **Files:**
 - Create: `app/tasks/__init__.py`, `app/tasks/scoring.py`
@@ -107,7 +117,7 @@ git commit -m "chore: scaffold uv project with settings and UTC datetime type"
   - `compute_priority(task: ScorableTask, daily_study_hours: float, now: datetime) -> PriorityResult | None`.
   - `sort_tasks(tasks: Iterable[T], mode: SortMode, daily_study_hours: float, now: datetime) -> list[tuple[T, PriorityResult | None]]`.
 
-- [ ] **Step 1: Write the failing tests in `tests/test_scoring.py`**
+- [ ] **Step 1: Write failing tests in `tests/test_scoring.py`**
 
 Test exact reference scores A=20.2, B=56.1, C=64.5 with frozen `now = 2026-11-17T12:00:00Z` and `daily_study_hours = 3.0`. Test boundary cases: 24h urgent cutoff, impact cap at 50%, difficulty factor 0 to 1, deadline sorting order, smart sorting order, completed tasks at the bottom with `None` priority.
 
@@ -125,16 +135,11 @@ Implement formula per `implementation.md` §4 and ordering per §4.
 Run: `uv run pytest tests/test_scoring.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add app/tasks/scoring.py tests/test_scoring.py
-git commit -m "feat: add pure priority engine with deadline and smart sort"
-```
-
 ---
 
-### Task 3: Models (Users, Courses, Tasks), initial Alembic migration, and MySQL test harness
+## DAY 2: Database Models & Migration Harness (~2.5 Hours)
+
+### Task 3: Models (Users, Courses, Tasks), initial Alembic migration, and MySQL test harness (~2.5 hrs)
 
 **Files:**
 - Create: `app/users/__init__.py`, `app/users/models.py`, `app/courses/__init__.py`, `app/courses/models.py`, `app/tasks/models.py`, `app/models.py`
@@ -172,16 +177,11 @@ Verify generated migration uses `DATETIME(fsp=6)`, `ON DELETE CASCADE`, `ON DELE
 Run: `uv run pytest tests/test_migrations.py -v`
 Expected: 5 passed.
 
-- [ ] **Step 6: Commit**
-
-```bash
-git add app alembic alembic.ini tests/conftest.py tests/test_migrations.py
-git commit -m "feat: add user, course, task models with MySQL migration and test harness"
-```
-
 ---
 
-### Task 4: Security, authentication, and `/users/me`
+## DAY 3: Authentication & Profile Service (~2.5 Hours)
+
+### Task 4: Security, authentication, and `/users/me` (~2.5 hrs)
 
 **Files:**
 - Create: `app/core/security.py`, `app/users/schemas.py`, `app/users/router.py`, `app/auth/__init__.py`, `app/auth/router.py`, `app/auth/dependencies.py`, `app/main.py`
@@ -213,16 +213,11 @@ Expected: FAIL.
 Run: `uv run pytest tests/test_auth.py tests/test_users.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add app tests
-git commit -m "feat: add auth with username/email login and /users/me endpoints"
-```
-
 ---
 
-### Task 5: Course management CRUD (`/courses`)
+## DAY 4: Academic Domain CRUD (~3.5 Hours)
+
+### Task 5: Course management CRUD (`/courses`) (~1.5 hrs)
 
 **Files:**
 - Create: `app/courses/schemas.py`, `app/courses/service.py`, `app/courses/router.py`
@@ -261,16 +256,9 @@ Expected: FAIL.
 Run: `uv run pytest tests/test_courses.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add app/courses tests/test_courses.py app/main.py
-git commit -m "feat: add course CRUD with hex color validation and owner isolation"
-```
-
 ---
 
-### Task 6: Task CRUD with optional course association
+### Task 6: Task CRUD with optional course association (~2.0 hrs)
 
 **Files:**
 - Create: `app/tasks/schemas.py`, `app/tasks/service.py`, `app/tasks/router.py`
@@ -307,16 +295,11 @@ Expected: FAIL.
 Run: `uv run pytest tests/test_tasks_crud.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add app/tasks tests/test_tasks_crud.py app/main.py
-git commit -m "feat: add task CRUD with optional course association and priority calculation"
-```
-
 ---
 
-### Task 7: Queue listing with course filter, deadline/smart sort, and top tasks
+## DAY 5: Queue Engine & Delivery (~3.5 Hours)
+
+### Task 7: Queue listing with course filter, deadline/smart sort, and top tasks (~2.0 hrs)
 
 **Files:**
 - Modify: `app/tasks/service.py`, `app/tasks/router.py`
@@ -345,23 +328,17 @@ Expected: FAIL.
 Run: `uv run pytest tests/test_tasks_queue.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add app/tasks tests/test_tasks_queue.py
-git commit -m "feat: add queue listing with course filter and top tasks endpoint"
-```
-
 ---
 
-### Task 8: Cross-tenant isolation suite, manual QA, and context record
+### Task 8: Cross-tenant isolation suite, manual QA, and context record (~1.5 hrs)
 
 **Files:**
-- Create: `tests/test_isolation.py`, `specs/context.md`, `README.md`
+- Create: `tests/test_isolation.py`, `specs/context.md`
+- Test: full test suite (`uv run pytest -v`)
 
 **Interfaces:**
 - Consumes: Full API (Tasks 1–7).
-- Produces: Security verification for Constitution S-2/S-3, Phase 4 living context documentation (`specs/context.md`), and repository README.
+- Produces: Security verification for Constitution S-2/S-3, Phase 4 living context documentation (`specs/context.md`).
 
 - [ ] **Step 1: Write security isolation tests in `tests/test_isolation.py`**
 
@@ -376,13 +353,6 @@ Expected: All tests pass.
 
 Run `uv run fastapi dev app/main.py`. Test registration, course creation, task creation with and without course, deadline sort, smart sort, study hours adjustment, and account deletion.
 
-- [ ] **Step 4: Create `README.md` and `specs/context.md`**
+- [ ] **Step 4: Create `specs/context.md`**
 
 Document architecture, API contracts, local runbook, test execution summary, and M2 handoff.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add tests/test_isolation.py README.md specs/context.md
-git commit -m "test: add isolation suite; docs: add README and M1 context record"
-```
