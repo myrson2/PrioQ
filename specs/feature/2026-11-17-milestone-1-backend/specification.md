@@ -3,47 +3,53 @@
 **Feature folder:** `specs/feature/2026-11-17-milestone-1-backend/` · **Milestone:** M1 (see `specs/roadmap.md`) · **Governed by:** `specs/constitution.md`
 
 ## 1. Context & Motivation
-See `specs/mission.md` and `specs/roadmap.md` (Milestone 1). Deadline-only sorting hides heavy, high-impact work until it's an emergency. Milestone 1 delivers the backend only: a FastAPI + SQLAlchemy + MySQL REST API with user accounts, task CRUD, and two queue orderings — **deadline** (nearest first) and **smart** (a rule-based, explainable 0–100 score). It must be ready for usability testing after Milestone 2. Milestone 3 may change the schema and add an ML model behind the same scoring interface.
+See `specs/mission.md` and `specs/roadmap.md`. Pure due-date sorting hides heavy, high-impact coursework until it becomes an emergency. Furthermore, academic assignments do not exist in a vacuum; they belong to specific classes (e.g. "CS 101" or "Math 201"). 
 
-## 2. Goals / Non-goals / Anti-goals
-- **Goals:** accounts with per-user isolation; full task CRUD; deadline and smart sorting with a score breakdown; Alembic migrations on MySQL; automated pytest suite plus manual `/docs` checks.
-- **Non-goals (deferred):** everything in the constitution's M1 out-of-scope list (Docker, Redis, ML, frontend/CORS, email, deployment), plus refresh tokens, progress / hours-spent tracking, courses/subjects, title search, due-date range filters.
-- **Anti-goals:** a student seeing or inferring another student's tasks; a score nobody can explain; urgent tasks silently buried.
+Milestone 1 delivers the full backend foundation: a FastAPI + SQLAlchemy (sync) + MySQL 8 REST API supporting student accounts with usernames, course management, task CRUD with optional course association, and dual queue sorting—**deadline** (nearest first) and **smart** (explainable 0–100 score).
 
-## 3. User Stories
-- **US-1 Register:** GIVEN a new student WHEN they submit email + password THEN an account is created with `daily_study_hours = 3.0`.
-- **US-2 Login:** GIVEN a registered student WHEN they log in with correct credentials THEN they get a bearer token valid for 7 days.
-- **US-3 Create task:** GIVEN a logged-in student WHEN they submit a valid task THEN it is saved under their account and returned with its priority breakdown.
-- **US-4 Deadline queue:** GIVEN several tasks WHEN the student calls `GET /tasks` THEN incomplete tasks come nearest-deadline first, completed tasks at the bottom.
-- **US-5 Smart queue:** GIVEN several tasks WHEN the student calls `GET /tasks?sort=smart` THEN incomplete tasks are ordered by score, highest first, each with its breakdown and an `urgent` flag.
-- **US-6 Top tasks:** GIVEN several tasks WHEN the student calls `GET /tasks/top?n=3` THEN they get their top 3 incomplete tasks (smart order by default).
-- **US-7 Complete task:** GIVEN a task WHEN the student sets `completed=true` THEN `completed_at` is recorded and the task drops to the bottom; setting it back to `false` clears `completed_at`.
-- **US-8 Isolation:** GIVEN student B WHEN B requests, edits or deletes student A's task THEN B gets `404 Not Found`.
-- **US-9 Study hours:** GIVEN a student WHEN they change `daily_study_hours` THEN smart scores reflect it on the next fetch.
-- **US-10 Delete account:** GIVEN a student WHEN they call `DELETE /users/me` THEN their account and all their tasks are removed.
+## 2. Approaches Considered & Decision
+- **Approach 1 (Lean 2-table):** Just `users` and `tasks`. Rejected because assignment weights only have contextual meaning within a course, and M2 needs course color coding.
+- **Approach 2 (Academic 3-table — SELECTED):** `users`, `courses`, and `tasks`. Tasks have an optional `course_id`. Gives natural structure to a student's semester with clean color badges, while still supporting general to-dos.
+- **Approach 3 (Enterprise 5-table):** Adding `categories`, `user_preferences`, and `task_audit_logs`. Rejected because audit logs add write overhead on read-time scoring, and DB-persisted priority scores cause immediate staleness bugs (violating Constitution D-5).
 
-## 4. Functional Requirements
-- **FR-1** `POST /auth/register` creates a user; email is unique regardless of case (stored lowercased); duplicate → `409`.
-- **FR-2** `POST /auth/login` uses the OAuth2 password form (`username` = email, `password`); returns `{access_token, token_type: "bearer"}`.
-- **FR-3** Every `/tasks*` and `/users/me*` route requires a valid bearer token via `get_current_user` (constitution S-1).
-- **FR-4** `GET / PATCH / DELETE /users/me`: read, update (`daily_study_hours` only), delete the account (cascade-deleting tasks).
-- **FR-5** Task fields: `title`, optional `description`, `category ∈ {quiz, homework, project, exam, other}`, `due_at` (timezone-aware ISO 8601), `grade_weight` (0–100), `estimated_hours` (>0, ≤500), `difficulty` (1–5), `completed` (bool).
-- **FR-6** Task routes: `POST /tasks`, `GET /tasks`, `GET /tasks/top`, `GET /tasks/{id}`, `PATCH /tasks/{id}` (partial), `DELETE /tasks/{id}`.
-- **FR-7** `GET /tasks` supports `sort=deadline|smart` (default `deadline`), `category`, `completed`, `limit` (default 50, max 200), `offset` (≥0).
-- **FR-8** Every task response includes a computed `priority` block (score, breakdown, flags), or `null` for completed tasks. Scores are never stored (D-5).
-- **FR-9** Smart score formula and ordering exactly as in `implementation.md` §5.
-- **FR-10** Past due dates are allowed on create/update; such tasks are `overdue` and `urgent`.
+## 3. Goals, Non-goals, and Anti-goals
+- **Goals:** 
+  - User accounts with username, email, and Argon2 password hashing.
+  - Course CRUD (`/courses`) scoped to the logged-in student.
+  - Task CRUD (`/tasks`) with optional course linkage and category enum.
+  - Dual queue sorting (`?sort=deadline` and `?sort=smart`) with complete score breakdown.
+  - Multi-tenant security with 404 masking (Axiom 2 / S-3).
+  - Alembic migrations and automated test suite on MySQL 8.
+- **Non-goals (deferred):** Frontend (M2), CORS (M2), ML model (M3), audit logging tables, refresh tokens, email verification, subtask checklists.
+- **Anti-goals:** Storing priority scores in the database; allowing cross-user resource snooping; burying urgent deadlines under low-effort tasks.
 
-## 5. Non-Functional Requirements
-- **Security:** constitution S-1 to S-5.
-- **Data:** constitution D-1 to D-6; all datetimes UTC.
-- **Performance:** personal scale (hundreds to low thousands of tasks per user); sorting in Python is acceptable.
-- **Errors:** FastAPI's `{"detail": ...}` shape; validation errors are `422`.
+## 4. User Stories
+- **US-1 Register & Profile:** GIVEN a new student WHEN they register with username, email, and password THEN an account is created with `daily_study_hours = 3.0`.
+- **US-2 Course Management:** GIVEN a logged-in student WHEN they create courses (e.g., code `"CS101"`, color `"#3B82F6"`) THEN they can list, update, and delete their own courses.
+- **US-3 Task Association:** GIVEN a student with courses WHEN they create a task with an optional `course_id` THEN the task links to that course; if no `course_id` is passed, it is created as a general academic task.
+- **US-4 Course Deletion Safety:** GIVEN a course with tasks WHEN the course is deleted THEN the tasks are NOT deleted; their `course_id` becomes `null`.
+- **US-5 IDOR Protection on Courses:** GIVEN student B WHEN B attempts to assign student A's `course_id` to a task, or access A's course, THEN the API returns `404 Not Found`.
+- **US-6 Queue & Filtering:** GIVEN tasks across multiple courses WHEN the student requests `GET /tasks?course_id=1&sort=smart` THEN tasks are filtered to that course and ranked by priority score.
+- **US-7 Score Transparency:** GIVEN an incomplete task WHEN fetched via the API THEN a full breakdown of time pressure, grade impact, difficulty factor, hours until due, and urgency flags is returned.
+
+## 5. Functional Requirements
+- **FR-1** `POST /auth/register` accepts `username`, `email`, and `password`. Both `username` and `email` are unique (case-insensitive); duplicates return `409 Conflict`.
+- **FR-2** `POST /auth/login` uses OAuth2 password flow (`username` field accepts either email or username, and `password`); returns 7-day bearer JWT.
+- **FR-3** `GET / PATCH / DELETE /users/me`: read profile, update `daily_study_hours`, or delete user account (cascading all courses and tasks).
+- **FR-4** Courses CRUD: `POST /courses`, `GET /courses`, `GET /courses/{id}`, `PATCH /courses/{id}`, `DELETE /courses/{id}`. All strictly scoped to `owner_id == current_user.id`.
+- **FR-5** Course fields: `name` (1–100 chars), `code` (1–20 chars, e.g. `"MATH201"`), `color` (7-char hex code, e.g. `"#10B981"`, default `"#3B82F6"`).
+- **FR-6** Tasks CRUD: `POST /tasks`, `GET /tasks`, `GET /tasks/top`, `GET /tasks/{id}`, `PATCH /tasks/{id}`, `DELETE /tasks/{id}`.
+- **FR-7** Task fields: `title`, optional `description`, optional `course_id`, `category ∈ {quiz, homework, project, exam, other}`, `due_at` (UTC aware), `grade_weight` (0–100), `estimated_hours` (>0, ≤500), `difficulty` (1–5), `completed` (bool).
+- **FR-8** Queue query parameters on `GET /tasks`: `sort=deadline|smart` (default `deadline`), `course_id` (int), `category`, `completed` (bool), `limit` (default 50, max 200), `offset` (≥0).
+- **FR-9** `GET /tasks/top`: returns top `n` (1–10, default 3) incomplete tasks, defaulting to smart sort.
+- **FR-10** Priority score calculated at runtime (0–100) per `implementation.md` §5; `priority` block is `null` for completed tasks.
 
 ## 6. Acceptance Criteria
-- [ ] Register → login → Authorize in `/docs` → full task CRUD works manually.
-- [ ] Reference tasks A, B, C (validation.md §2) score **20.2**, **56.1**, **64.5**; deadline order C, A, B; smart order C, B, A.
-- [ ] Completed tasks always come after incomplete ones and have `priority: null`.
-- [ ] User B gets `404` for every operation on user A's task.
-- [ ] `DELETE /users/me` removes the user's tasks from MySQL.
-- [ ] `uv run alembic upgrade head` builds the schema on an empty MySQL DB; `uv run pytest` passes.
+- [ ] User registration with `username` and `email` works; duplicate usernames or emails return 409.
+- [ ] User can create, view, edit, and delete courses.
+- [ ] Creating a task with someone else's `course_id` returns `404 Not Found`.
+- [ ] Deleting a course sets `course_id = null` on linked tasks without deleting the tasks.
+- [ ] Deleting a user account cascades and completely removes all their courses and tasks.
+- [ ] `GET /tasks?sort=smart` outputs the exact reference scores (A=20.2, B=56.1, C=64.5).
+- [ ] `uv run alembic upgrade head` creates all 3 tables with appropriate foreign keys.
+- [ ] Full `uv run pytest` suite passes green.
