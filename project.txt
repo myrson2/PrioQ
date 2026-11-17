@@ -1,0 +1,53 @@
+Here is the complete project blueprint structured cleanly for your development plan:
+
+---
+
+## Project Title: Smart Student Task Prioritization Queue System
+
+### 1. Problem Statement
+
+Students constantly juggle multiple academic responsibilities—such as short quizzes, homework, and long-term major projects—each carrying different grade weights, deadlines, and effort requirements. Traditional to-do lists rely on static chronological sorting (due dates only). This causes severe decision fatigue and poor time management, leading students to either procrastinate on heavy, high-impact projects until they become emergencies or waste valuable energy on low-impact, short-term tasks. There is a lack of a lightweight, personalized system that dynamically calculates what a student *actually* needs to work on right now based on multiple contextual constraints.
+
+### 2. Proposed Solution
+
+A full-stack task management web application featuring a **machine learning-enhanced prioritization engine**. The system moves beyond simple date sorting by evaluating tasks across multiple dimensions (urgency, grade weight, estimated effort, and difficulty). It uses a hybrid approach: starting with a deterministic algorithmic scoring formula in its early stages and transitioning into a trained **Random Forest Regressor** model (built with Python, Pandas, and Scikit-Learn) that predicts optimal task priority scores based on your personal workflow patterns.
+
+### 3. Core Features
+
+* **Multi-Variable Task Creation (CRUD):** Input tasks with detailed parameters including title, category, due date, grade weight (percentage impact), estimated hours, and difficulty level.
+* **Dynamic Priority Queue Engine:** Automatically computes and updates task priority scores so that the most critical items bubble straight to the top of your dashboard.
+* **Minimalist, Distraction-Free UI:** A clean interface designed to show you only your top recommended tasks for the day, eliminating cognitive overload.
+* **ML-Powered Prediction Layer:** A backend training loop that exports historical task data and utilizes a Random Forest model to refine priority scores over time.
+* **Local Data Persistence:** Lightweight SQLite database integration ensuring your tasks and progress are safely saved locally.
+
+### 4. Development Milestones
+
+#### Milestone 1: Backend Development Only
+
+* **Tech Stack:** Python, FastAPI, Pydantic, SQLite, SQLAlchemy.
+* **Objectives:**
+* Define the database schema and task data models.
+* Build full CRUD REST API endpoints (`/tasks`).
+* Implement the initial rule-based mathematical scoring algorithm and sorting logic.
+* Test and verify database operations using FastAPI's built-in docs or Postman.
+
+
+
+#### Milestone 2: Frontend Integration
+
+* **Tech Stack:** React, Vite, TypeScript, Tailwind CSS, Axios/Fetch API.
+* **Objectives:**
+* Scaffold a clean, responsive dashboard interface.
+* Build a quick-add task form with zero friction.
+* Connect frontend state management to the FastAPI backend endpoints.
+* Render the sorted task queue dynamically so high-priority items display at the top.
+
+
+
+#### Milestone 3: Machine Learning Intelligence
+
+* **Tech Stack:** Pandas, Scikit-Learn (`RandomForestRegressor`).
+* **Objectives:**
+* Export historical task completion data from SQLite into a structured CSV format using Pandas.
+* Train a Random Forest model using features like days until due, grade weight, and effort.
+* Integrate the trained model prediction function directly into the backend task-fetching endpoint to automate intelligent sorting.
