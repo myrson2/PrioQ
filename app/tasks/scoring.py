@@ -53,7 +53,7 @@ def compute_priority(
     hours_until_due = (task.due_at - now).total_seconds() / 3600.0 # in seconds
 
     if hours_until_due <= 0:
-        time_pressure = 1.0 # ?
+        time_pressure = 1.0 # closer to 1.0 the higher the pressure it gets
     else:
         available_study_hours = (hours_until_due / 24.0) * daily_study_hours 
         time_pressure = min(task.estimated_hours / available_study_hours, 1.0) # the closer to 1.0 the urgent it is
@@ -121,4 +121,4 @@ def sort_tasks[T](
         reverse=True,
     )
 
-    return [[(task, result) for task, result in scored] + [(task, None) for task in completed]]
+    return [(task, result) for task, result in scored] + [(task, None) for task in completed]
