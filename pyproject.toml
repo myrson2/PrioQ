@@ -1,0 +1,30 @@
+[project]
+name = "prioq"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "crym_o", email = "beros.josemyrson.oreo1@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "aiomysql",
+    "alembic>=1.20.1",
+    "cryptography>=50.0.2",
+    "email-validator>=2.4.0",
+    "fastapi[standard]>=0.163.2",
+    "httpx>=0.28.1",
+    "pwdlib[argon2]>=0.4.2",
+    "pydantic-settings>=2.16.3",
+    "pyjwt>=2.15.1",
+    "pymysql>=1.2.4",
+    "pytest>=9.2.0",
+    "sqlalchemy>=2.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.uv]
+package = false

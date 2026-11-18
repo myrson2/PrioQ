@@ -21,6 +21,7 @@
 - If a file that should be ignored is not in `.gitignore`, tell me before adding it.
 
 ### Before you change anything
+- **NEVER write or modify code unless I explicitly say so.** This includes source files, tests, stubs, scaffolding, and config edits. If a task seems to need code, explain the plan and wait for my explicit approval first. Documentation edits I was asked to make are allowed.
 - Read the relevant files first. Do not guess how the code works.
 - If the request is unclear, ask a question instead of assuming.
 - For changes touching more than 3 files, or anything involving the database, auth, or payments, explain your plan first and wait for my OK.

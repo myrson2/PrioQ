@@ -1,0 +1,14 @@
+# Runtime dependencies (from: uv add "fastapi[standard]" "sqlalchemy>=2.0" alembic pymysql cryptography pydantic-settings pyjwt "pwdlib[argon2]" email-validator)
+fastapi[standard]
+sqlalchemy>=2.0
+alembic
+pymysql
+cryptography
+pydantic-settings
+pyjwt
+pwdlib[argon2]
+email-validator
+
+# Development dependencies (from: uv add --dev pytest httpx)
+pytest
+httpx
