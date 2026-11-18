@@ -1,8 +1,8 @@
 """SQLAlchemy engine, session factory, declarative base, and UTC datetime type."""
 
+from collections.abc import Iterator
 from datetime import datetime, timezone
 from typing import Optional
-from collections.abc import Iterator
 
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.dialects.mysql import DATETIME
@@ -39,8 +39,8 @@ class UTCDateTime(TypeDecorator):
     cache_ok = True
 
     def process_bind_param(
-        self, value: Optional[datetime], dialect
-    ) -> Optional[datetime]:
+        self, value: Optional[datetime], dialect  # noqa: UP045
+    ) -> Optional[datetime]:  # noqa: UP045
         """Converts incoming timezone-aware datetime to naive UTC before saving to DB.
 
         Rejects naive datetime objects with ValueError. Passes None through untouched.
