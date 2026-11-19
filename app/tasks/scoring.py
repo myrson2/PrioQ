@@ -16,7 +16,6 @@ URGENT_WINDOW_HOURS = 24.0
 
 T = TypeVar("T")
 
-
 class SortMode(StrEnum):
     deadline = "deadline"
     smart = "smart"
