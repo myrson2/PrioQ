@@ -1,4 +1,4 @@
-# Tech Stack — Smart Student Task Prioritization Queue System
+ # Tech Stack — Smart Student Task Prioritization Queue System
 
 ## Core Stack Matrix
 | Layer | Technology | Version | Rationale |
