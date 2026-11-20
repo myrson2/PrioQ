@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.12 (uv), FastAPI, Pydantic v2, SQLAlchemy 2.0 (sync), PyMySQL + cryptography, Alembic, pydantic-settings, PyJWT, pwdlib[argon2], email-validator, pytest, httpx.
 
-**Spec:** `specs/feature/2026-11-17-milestone-1-backend/` (`specification.md`, `implementation.md`, `validation.md`), governed by `specs/constitution.md` and `specs/tech-stack.md`.
+**Spec:** `feature/2026-11-17-milestone-1-backend` (`feature/2026-11-17-milestone-1-backend/specification.md`, `feature/2026-11-17-milestone-1-backend/implementation.md`, `feature/2026-11-17-milestone-1-backend/validation.md`), governed by `constitution.md` and `tech-stack.md`.
 
 ---
 
@@ -38,11 +38,11 @@
 - Deleting a course sets `tasks.course_id = NULL` (`ON DELETE SET NULL`), preserving the student's task. Deleting a user cascades and removes all their courses and tasks (`ON DELETE CASCADE`).
 - Scoring constants: `WEIGHT_TIME_PRESSURE = 0.50`, `WEIGHT_IMPACT = 0.35`, `WEIGHT_DIFFICULTY = 0.15`, `IMPACT_CAP_PERCENT = 50.0`, `URGENT_WINDOW_HOURS = 24.0`, default `daily_study_hours = 3.0`.
 - Forbidden in M1: Docker, Redis, ML code, frontend/CORS, email sending, deployment configuration.
-- Version control is handled by the owner per `AGENTS.md` (no automated git commits without explicit instruction).
+- Version control is handled by the owner per `../AGENTS.md` (no automated git commits without explicit instruction).
 
 ## Prerequisite (Owner Action, before Day 2)
 
-Run the one-time MySQL setup SQL from `specs/feature/2026-11-17-milestone-1-backend/implementation.md` §1 to create `taskqueue`, `taskqueue_test`, and the `taskqueue` MySQL user. Copy `.env.example` to `.env` and configure `SECRET_KEY`, `DATABASE_URL`, and `TEST_DATABASE_URL`.
+Run the one-time MySQL setup SQL from `feature/2026-11-17-milestone-1-backend/implementation.md` §1 to create `taskqueue`, `taskqueue_test`, and the `taskqueue` MySQL user. Copy `../.env.example` to `../.env` and configure `SECRET_KEY`, `DATABASE_URL`, and `TEST_DATABASE_URL`.
 
 ## Review Focus
 
@@ -59,9 +59,9 @@ Run the one-time MySQL setup SQL from `specs/feature/2026-11-17-milestone-1-back
 ### Task 1: Project scaffold, settings, and database core (~1.5 hrs)
 
 **Files:**
-- Create: `pyproject.toml`, `.python-version`, `uv.lock`, `.env.example`
-- Create: `app/__init__.py`, `app/core/__init__.py`, `app/core/config.py`, `app/core/database.py`
-- Test: `tests/__init__.py`, `tests/test_core.py`
+- Create: `../pyproject.toml`, `.python-version`, `../uv.lock`, `../.env.example`
+- Create: `app/__init__.py`, `app/core/__init__.py`, `../app/core/config.py`, `../app/core/database.py`
+- Test: `tests/__init__.py`, `../tests/test_core.py`
 
 **Interfaces:**
 - Produces:
@@ -76,15 +76,15 @@ Run the one-time MySQL setup SQL from `specs/feature/2026-11-17-milestone-1-back
 
 Run: `uv init --bare --python 3.12`, `uv python pin 3.12`, then:
 `uv add "fastapi[standard]" "sqlalchemy>=2.0" alembic pymysql cryptography pydantic-settings pyjwt "pwdlib[argon2]" email-validator` and `uv add --dev pytest httpx`.
-Add pytest config to `pyproject.toml`:
+Add pytest config to `../pyproject.toml`:
 ```toml
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
 ```
-Create `.env.example` with `SECRET_KEY=change-me`, `DATABASE_URL=mysql+pymysql://taskqueue:<pw>@localhost:3306/taskqueue?charset=utf8mb4`, `TEST_DATABASE_URL=mysql+pymysql://taskqueue:<pw>@localhost:3306/taskqueue_test?charset=utf8mb4`, `ACCESS_TOKEN_EXPIRE_DAYS=7`.
+Create `../.env.example` with `SECRET_KEY=change-me`, `DATABASE_URL=mysql+pymysql://taskqueue:<pw>@localhost:3306/taskqueue?charset=utf8mb4`, `TEST_DATABASE_URL=mysql+pymysql://taskqueue:<pw>@localhost:3306/taskqueue_test?charset=utf8mb4`, `ACCESS_TOKEN_EXPIRE_DAYS=7`.
 
-- [ ] **Step 2: Write failing unit tests in `tests/test_core.py`**
+- [ ] **Step 2: Write failing unit tests in `../tests/test_core.py`**
 
 Test that Settings requires `SECRET_KEY`, default expiry is 7, `UTCDateTime` converts timezone offsets to naive UTC, rejects naive datetimes on write, and returns aware UTC datetimes on read.
 
@@ -93,7 +93,7 @@ Test that Settings requires `SECRET_KEY`, default expiry is 7, `UTCDateTime` con
 Run: `uv run pytest tests/test_core.py -v`
 Expected: FAIL (missing `app.core.config` / `app.core.database`).
 
-- [ ] **Step 4: Implement `app/core/config.py` and `app/core/database.py`**
+- [ ] **Step 4: Implement `../app/core/config.py` and `../app/core/database.py`**
 
 - [ ] **Step 5: Run test to verify it passes**
 
@@ -105,8 +105,8 @@ Expected: PASS (all tests pass).
 ### Task 2: Pure priority engine (~1.5 hrs)
 
 **Files:**
-- Create: `app/tasks/__init__.py`, `app/tasks/scoring.py`
-- Test: `tests/test_scoring.py`
+- Create: `app/tasks/__init__.py`, `../app/tasks/scoring.py`
+- Test: `../tests/test_scoring.py`
 
 **Interfaces:**
 - Consumes: Nothing external (pure Python, standard library only).
@@ -117,7 +117,7 @@ Expected: PASS (all tests pass).
   - `compute_priority(task: ScorableTask, daily_study_hours: float, now: datetime) -> PriorityResult | None`.
   - `sort_tasks(tasks: Iterable[T], mode: SortMode, daily_study_hours: float, now: datetime) -> list[tuple[T, PriorityResult | None]]`.
 
-- [ ] **Step 1: Write failing tests in `tests/test_scoring.py`**
+- [ ] **Step 1: Write failing tests in `../tests/test_scoring.py`**
 
 Test exact reference scores A=20.2, B=56.1, C=64.5 with frozen `now = 2026-11-17T12:00:00Z` and `daily_study_hours = 3.0`. Test boundary cases: 24h urgent cutoff, impact cap at 50%, difficulty factor 0 to 1, deadline sorting order, smart sorting order, completed tasks at the bottom with `None` priority.
 
@@ -126,9 +126,9 @@ Test exact reference scores A=20.2, B=56.1, C=64.5 with frozen `now = 2026-11-17
 Run: `uv run pytest tests/test_scoring.py -v`
 Expected: FAIL (ImportError `app.tasks.scoring`).
 
-- [ ] **Step 3: Implement `app/tasks/scoring.py`**
+- [ ] **Step 3: Implement `../app/tasks/scoring.py`**
 
-Implement formula per `implementation.md` §4 and ordering per §4.
+Implement formula per `feature/2026-11-17-milestone-1-backend/implementation.md` §4 and ordering per §4.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -143,8 +143,8 @@ Expected: PASS.
 
 **Files:**
 - Create: `app/users/__init__.py`, `app/users/models.py`, `app/courses/__init__.py`, `app/courses/models.py`, `app/tasks/models.py`, `app/models.py`
-- Create: `alembic.ini`, `alembic/env.py`, `alembic/script.py.mako`, `alembic/versions/<rev>_create_users_courses_tasks.py`
-- Test: `tests/conftest.py`, `tests/test_migrations.py`
+- Create: `../alembic.ini`, `../alembic/env.py`, `../alembic/script.py.mako`, `alembic/versions/<rev>_create_users_courses_tasks.py`
+- Test: `../tests/conftest.py`, `../tests/test_migrations.py`
 
 **Interfaces:**
 - Consumes: `Base`, `UTCDateTime`, `utcnow`, `get_settings` (Task 1).
@@ -153,11 +153,11 @@ Expected: PASS.
   - `Course`: `id`, `owner_id` (FK `users.id` `ON DELETE CASCADE`), `name` (VARCHAR 100), `code` (VARCHAR 20), `color` (VARCHAR 7, default `"#3B82F6"`), `created_at`, `updated_at`. Relationship: `tasks` with `back_populates="course"`.
   - `TaskCategory(StrEnum)`: `quiz, homework, project, exam, other`.
   - `Task`: `id`, `owner_id` (FK `users.id` `ON DELETE CASCADE`), `course_id` (FK `courses.id` `ON DELETE SET NULL`, nullable), `title`, `description`, `category` (Enum VARCHAR 20 + Check), `due_at`, `grade_weight` (Double), `estimated_hours` (Double), `difficulty`, `completed`, `completed_at`, `created_at`, `updated_at`. Relationships: `owner`, `course`.
-  - `tests/conftest.py`: Guarded MySQL `test_engine` (must end with `_test`), running Alembic migrations once, auto-cleaning tables before each test (`DELETE FROM tasks; DELETE FROM courses; DELETE FROM users;`), `db_session`.
+  - `../tests/conftest.py`: Guarded MySQL `test_engine` (must end with `_test`), running Alembic migrations once, auto-cleaning tables before each test (`DELETE FROM tasks; DELETE FROM courses; DELETE FROM users;`), `db_session`.
 
 - [ ] **Step 1: Define models in `app/users/models.py`, `app/courses/models.py`, `app/tasks/models.py`, `app/models.py`**
 
-- [ ] **Step 2: Write failing tests in `tests/test_migrations.py`**
+- [ ] **Step 2: Write failing tests in `../tests/test_migrations.py`**
 
 Verify tables `users`, `courses`, `tasks`, and `alembic_version` exist; verify foreign key constraints (`users.id` cascade delete, `courses.id` set null on tasks); verify `Double` types; verify downgrade and upgrade cycles.
 
@@ -185,7 +185,7 @@ Expected: 5 passed.
 
 **Files:**
 - Create: `app/core/security.py`, `app/users/schemas.py`, `app/users/router.py`, `app/auth/__init__.py`, `app/auth/router.py`, `app/auth/dependencies.py`, `app/main.py`
-- Modify: `tests/conftest.py` (add `client`, `make_user`, `auth_headers`)
+- Modify: `../tests/conftest.py` (add `client`, `make_user`, `auth_headers`)
 - Test: `tests/test_auth.py`, `tests/test_users.py`
 
 **Interfaces:**
